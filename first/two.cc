@@ -7,9 +7,21 @@ using namespace Eigen;
 
 namespace plt = matplotlibcpp;
 
+int change_state(double rnd, int currentState, Matrix3d &transitionMatrix) {
+  int new_state = 0;
+  if (rnd < transitionMatrix(currentState, 0)) {
+    new_state = 0;
+  } else if (rnd < (transitionMatrix(currentState, 0) + transitionMatrix(currentState, 1))) {
+    new_state = 1;
+  } else {
+    new_state = 2;
+  }
+  return new_state;
+}
+
 Vector3d simulate(int time, Matrix3d &transitionMatrix) {
-  std::mt19937 rng;
-  rng.seed(std::random_device()());
+  std::mt19937 mt;
+  mt.seed(std::random_device()());
   std::uniform_real_distribution<float> dist(0.f, 1.f);
 
   int state0_count = 0;
@@ -18,32 +30,9 @@ Vector3d simulate(int time, Matrix3d &transitionMatrix) {
   int currentState = 0;
   
   for (int j = 0; j < time; j++) {
-    double r = dist(rng);
-    if (currentState == 0) {
-      if (r < transitionMatrix(currentState, 0)) {
-        currentState = 0;
-      } else if (r < (transitionMatrix(currentState, 0) + transitionMatrix(currentState, 1))) {
-        currentState = 1;
-      } else {
-        currentState = 2;
-      }
-    } else if (currentState == 1) {
-      if (r < transitionMatrix(currentState, 0)) {
-        currentState = 0;
-      } else if (r < (transitionMatrix(currentState, 0) + transitionMatrix(currentState, 1))) {
-        currentState = 1;
-      } else {
-        currentState = 2;
-      }
-    } else {
-      if (r < transitionMatrix(currentState, 0)) {
-        currentState = 0;
-      } else if (r < (transitionMatrix(currentState, 0) + transitionMatrix(currentState, 1))) {
-        currentState = 1;
-      } else {
-        currentState = 2;
-      }
-    }
+    const double rnd = dist(mt);
+    currentState = change_state(rnd, currentState, transitionMatrix);
+
     if (currentState == 0) state0_count++;
     if (currentState == 1) state1_count++;
     if (currentState == 2) state2_count++;
