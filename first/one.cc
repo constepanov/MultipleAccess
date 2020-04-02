@@ -17,6 +17,7 @@ std::pair<double, double> simulate(int time, int iterations, Matrix2d &transitio
   int currentState = 0;
 
   for (int i = 0; i < iterations; i++) {
+    currentState = 0;
     for (int j = 0; j < time; j++) {
       if (currentState == 0) {
         if (dist(rng) > transitionMatrix(0, 0)) currentState = 1;
@@ -43,7 +44,7 @@ std::vector<std::pair<double, double>> theoretic_probabilities(int time, Matrix2
 
 int main() {
   int time = 100;
-  int iterations = 10000;
+  int iterations = 100000;
   Matrix2d transitionMatrix;
   transitionMatrix << 0.8, 0.2,
                       0.6, 0.4;
