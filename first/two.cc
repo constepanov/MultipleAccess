@@ -48,8 +48,8 @@ Vector3d stationary_distribution(Matrix3d &transitionMatrix) {
   Matrix3d pt = transitionMatrix.transpose();
   pt.row(2).setOnes();
   pt(0, 0) -= 1;
-  pt(1, 1) -= 1;
-  return pt.colPivHouseholderQr().solve(b);
+  pt(1, 1) -= 1;  
+  return pt.inverse() * b;
 }
 
 int main() {
