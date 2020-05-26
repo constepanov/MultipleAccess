@@ -38,24 +38,28 @@ double simulate(int iterations, int state, Matrix3d &transitionMatrix) {
   return double(count) / iterations;
 }
 
-double theoretic_average_time(int state, Matrix3d &transitionMatrix) {
+// 3-е уравнение не нужно
+Vector3d theoretic_average_time(Matrix3d &transitionMatrix) {
   Vector3d b(1, 1, 1);
   Matrix3d a = -transitionMatrix;
   a(0, 0) += 1;
   a(1, 1) += 1;
-  return (a.inverse() * b)(state);
+  return (a.inverse() * b);
 }
 
 int main() {
   int iterations = 1000000;
   Matrix3d transitionMatrix;
-  transitionMatrix << 0.7, 0.295, 0.005,
+  transitionMatrix << 0.4, 0.1, 0.5,
                       0.5, 0.495, 0.005,
                       0, 0, 1;
   int state = 0;
-  std::cout << "Simulate average time: "  
+  std::cout << "Simulate average time(0): "  
             << simulate(iterations, state, transitionMatrix) << std::endl;
-  std::cout << "Theoretic average time: " 
-            << theoretic_average_time(state, transitionMatrix) << std::endl;
+  state = 1;
+  std::cout << "Simulate average time(1): "  
+            << simulate(iterations, state, transitionMatrix) << std::endl;
+  std::cout << "Theoretic average time: "
+            << theoretic_average_time(transitionMatrix) << std::endl;
   return 0;
 }

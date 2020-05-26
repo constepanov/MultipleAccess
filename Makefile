@@ -11,19 +11,22 @@ EIGEN_INCLUDE = /usr/include/eigen3
 CXXFLAGS += -I$(EIGEN_INCLUDE)
 
 # Either finds numpy or set -DWITHOUT_NUMPY
-CXXFLAGS        += $(shell $(PYTHON_BIN) $(CURDIR)/numpy_flags.py)
+CXXFLAGS        += $(shell $(PYTHON_BIN) $(CURDIR)/src/numpy_flags.py)
 WITHOUT_NUMPY   := $(findstring $(CXXFLAGS), WITHOUT_NUMPY)
 
-all: one two three
+all: bin/one bin/two bin/three bin/four
 
-one: one.cc
-	$(CXX) -o one one.cc $(CXXFLAGS) $(LDFLAGS)
+bin/one: src/one.cc
+	$(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
 
-two: two.cc
-	$(CXX) -o two two.cc $(CXXFLAGS) $(LDFLAGS)
+bin/two: src/two.cc
+	$(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
 
-three: three.cc
-	$(CXX) -o three three.cc $(CXXFLAGS) $(LDFLAGS)
+bin/three: src/three.cc
+	$(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
+
+bin/four: src/four.cc
+	$(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
 
 clean:
-	rm -f one one.png two three
+	rm -f bin/*
