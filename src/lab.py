@@ -65,29 +65,35 @@ def get_probability(current_state, new_state, prob_list, lambd, m, l):
     y = math.exp(-lambd / m) # вероятность того, что у пассивного абонента не появилось сообщений
     q = 1 - y # вероятность того, что пассивный абонент стал активным
     nt = int(current_state[0]) # Число активных пользователей в текущем состоянии
-    st = int(current_state[1]) # Индекс вероятности в текущем
+    st = int(current_state[1]) # Индекс вероятности в текущем состоянии
     nt_next = int(new_state[0])
     st_next = int(new_state[1])
     res = 0
 
-    if ((st_next - st == 1) or (st_next == st and st_next == (l - 1))) and (nt_next >= nt) and (nt > 1):
-        #print('Conflict:', current_state, new_state)
-        res = res + prob_list[st] ** nt * y ** (m - nt_next) * q ** (nt_next - nt) * comb(m - nt, m - nt_next)
-        if (nt > 2 and st != 0):
-            for i in range(2, nt):
-                res = res + comb(nt, nt - i) * prob_list[st] ** (nt - (nt - i)) * (1 - prob_list[st]) ** (nt - i) * y ** (m - nt_next) * q ** (nt_next - nt) * comb(m - nt, m - nt_next)
+    # Пусто
+    if (st == st_next and st_next == 0 and nt == 0) or (st_next - st == -1 and nt_next >= nt):
+        #print('Empty:', current_state, new_state)
+        res += (comb(m - nt, nt_next - nt) * 
+                (q ** (nt_next - nt)) * 
+                (y ** (m - nt_next)) *
+                ((1 - prob_list[st]) ** nt))
     
     # Успех
     if ((st_next == st and nt > 0 and nt_next >= nt - 1 and st_next != 0) or (nt == 1 and st == 0 and st == st_next)) and nt_next < m:
         #print('Success:', current_state, new_state)
-        res = res + nt * prob_list[st] * (1 - prob_list[st]) ** (nt - 1) * y ** (m - nt_next - 1) * q ** (nt_next - nt + 1) * comb(m - nt, nt_next - nt + 1)
-    
-    # Пусто
-    if (st == st_next and st_next == 0 and nt == 0) or (st_next - st == -1 and nt_next >= nt):
-        #print('Empty:', current_state, new_state)
-        #if 
-        res = res + comb(m - nt, m - nt_next) * (q ** (nt_next - nt)) * (y ** (m - nt_next)) * ((1 - prob_list[st]) ** nt)
+        res += (comb(m - nt, nt_next - nt + 1) * 
+                (q ** (nt_next - nt + 1)) *
+                (y ** (m - nt_next - 1)) *
+                nt * prob_list[st] *
+                ((1 - prob_list[st]) ** (nt - 1)))
 
+    if ((st_next - st == 1) or (st_next == st and st_next == (l - 1))) and (nt_next >= nt) and (nt > 1):
+        #print('Conflict:', current_state, new_state)
+        res += (comb(m - nt, nt_next - nt) *
+                (q ** (nt_next - nt)) *
+                (y ** (m - nt_next)) *
+                (1 - nt * prob_list[st] * ((1 - prob_list[st]) ** (nt - 1)) - (1 - prob_list[st]) ** nt))
+        
     return res
 
 def stationary_distribution(transition_matrix):
@@ -113,8 +119,8 @@ def get_transition_matrix(lambd, m, l, pairs, prob_list):
     return matrix
 
 message_count = 40000
-M = 25
-l = 10
+M = 15
+l = 5
 pairs = pde.fullfact([M + 1, l])
 prob_list = []
 for i in range(l):
