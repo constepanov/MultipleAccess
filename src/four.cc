@@ -134,7 +134,7 @@ void plot_system_stats(int message_count, int buffer_len) {
 
 int main() {
     int message_count = 100000;
-    int buffer_len = 5;
+    int buffer_len = 1;
     plot_system_stats(message_count, buffer_len);
     //simulateSynchronousSystem(0.1, 10, 1);
     return 0;
