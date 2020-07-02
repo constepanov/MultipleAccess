@@ -54,7 +54,7 @@ def simulate_adaptive_aloha(lmbda, message_count, user_count, prob_list_size):
         for u in range(user_count):
             if user_buffer[u] != -1:
                 avgN += 1
-        send_prob = 1 / 2 ** index
+        send_prob = 1 / (2 ** index)
         window_number += 1
     delay /= sent_messages
     avgN /= window_number
@@ -86,7 +86,7 @@ def get_probability(current_state, new_state, prob_list, lambd, m, l):
                 (y ** (m - nt_next - 1)) *
                 nt * prob_list[st] *
                 ((1 - prob_list[st]) ** (nt - 1)))
-
+    # Конфликт
     if ((st_next - st == 1) or (st_next == st and st_next == (l - 1))) and (nt_next >= nt) and (nt > 1):
         #print('Conflict:', current_state, new_state)
         res += (comb(m - nt, nt_next - nt) *
@@ -103,9 +103,8 @@ def stationary_distribution(transition_matrix):
     for i in range(len(pt)):
         pt[i][i] -= 1
         pt[-1][i] = 1
-    #res = np.linalg.inv(pt).dot(vec)
-    #res = vec.dot(np.linalg.inv(pt))
-    res = np.linalg.solve(pt, vec)
+    res = np.linalg.inv(pt).dot(vec)
+    #res = np.linalg.solve(pt, vec)
     return res
 
 def get_transition_matrix(lambd, m, l, pairs, prob_list):
@@ -116,59 +115,115 @@ def get_transition_matrix(lambd, m, l, pairs, prob_list):
             current_state = pairs[i]
             new_state = pairs[j]
             matrix[i][j] = get_probability(current_state, new_state, prob_list, lambd, m, l)
+    #for i in range(matrix_size):
+    #    print('row', i, 'sum', np.sum(matrix[i]))
     return matrix
 
-message_count = 40000
-M = 15
-l = 5
-pairs = pde.fullfact([M + 1, l])
-prob_list = []
-for i in range(l):
-    prob_list.append(1 / 2 ** i)
-print(pairs)
-lambdas = np.arange(0.1, 1, 0.1)
-delay_list = []
-avgMsg_list = []
-avg_n_th_list = []
-delay_theor_list = []
-lambd_out_list = []
-for lmbd in lambdas:
-    print("λ = {}".format(lmbd))
-    d, n, lambd_out = simulate_adaptive_aloha(lmbd, message_count, M, l)
-    matrix = get_transition_matrix(lmbd, M, l, pairs, prob_list)
-    dist = stationary_distribution(matrix)
-    print(np.sum(dist))
+def get_avg_n_theor(M, l, pairs, dist):
+    avg_n_th = 0
     Pr = np.zeros(M)
     for i in range(M):
         for j in range((M + 1) * l):
             if pairs[j][0] == i:
                 Pr[i] += dist[j]
-    
-    avg_n_th = 0
-    for i in range(M):
-        avg_n_th += i * Pr[i]
+        avg_n_th += (i * Pr[i])
+    return avg_n_th
+
+def get_lambd_out_theor(M, l, pairs, prob_list, dist):
     lambd_out_theor = 0
     for j in range((M + 1) * l):
         u1 = int(pairs[j][0])
         u2 = int(pairs[j][1])
         if u1 != 0:
             lambd_out_theor += (u1 * prob_list[u2] * (1 - prob_list[u2]) ** (u1 - 1) * dist[j])
+    return lambd_out_theor
+
+def plot_system_params(message_count, M, l, lambdas):
+    pairs = pde.fullfact([M + 1, l])
+    print(pairs)
+    prob_list = []
+    for i in range(l):
+        prob_list.append(1 / 2 ** i)
+    delay_list = []
+    avgMsg_list = []
+    avg_n_th_list = []
+    delay_theor_list = []
+    lambd_out_list = []
+
+    for lmbd in lambdas:
+        print("len = {} λ = {}".format(l, lmbd))
+        d, n, lambd_out = simulate_adaptive_aloha(lmbd, message_count, M, l)
+        matrix = get_transition_matrix(lmbd, M, l, pairs, prob_list)
+        dist = stationary_distribution(matrix)
+        print('dist len = {}, sum = {}'.format(len(dist), np.sum(dist)))
+        avg_n_th = get_avg_n_theor(M, l, pairs, dist)
+        lambd_out_theor = get_lambd_out_theor(M, l, pairs, prob_list, dist)
+        delay_theor = avg_n_th / lambd_out_theor
+        print('d = {}, d theor = {}, N = {}, N theor = {}'.format(d, delay_theor, n, avg_n_th))
+        avg_n_th_list.append(avg_n_th)
+        delay_theor_list.append(delay_theor)
+        delay_list.append(d)
+        avgMsg_list.append(n)
+        lambd_out_list.append(lambd_out)
     
-    avg_n_th_list.append(avg_n_th)
-    delay_theor_list.append(avg_n_th / lambd_out_theor)
-    delay_list.append(d)
-    avgMsg_list.append(n)
-    lambd_out_list.append(lambd_out)
+    plt.plot(lambdas, delay_list, label='d')
+    plt.plot(lambdas, delay_theor_list, label='d markov chain')
+    plt.xlabel('lambda')
+    plt.legend()
+    plt.savefig('one.png')
+    #plt.show()
+    plt.close()
+    plt.plot(lambdas, avgMsg_list, label='N')
+    plt.plot(lambdas, avg_n_th_list, label='N markov chain')
+    plt.xlabel('lambda')
+    plt.legend()
+    plt.savefig('two.png')
+    #plt.show()
+    plt.close()
+    #plt.legend()
+    #plt.plot(lambdas, lambd_out_list, label='lambda out')
+    #plt.legend()
 
-plt.plot(lambdas, delay_list, label='d')
-plt.plot(lambdas, delay_theor_list, label='d_theor')
-plt.plot(lambdas, avgMsg_list, label='N')
-plt.plot(lambdas, avg_n_th_list, label='N_theor')
-plt.legend()
-plt.show()
-plt.close()
 
-plt.plot(lambdas, lambd_out_list, label='lambda out')
-plt.legend()
-plt.show()
-plt.close()
+def plot_system_params_different_len(message_count, M, len_list, lambdas):
+    for l in len_list:
+        pairs = pde.fullfact([M + 1, l])
+        print(pairs)
+        prob_list = []
+        for i in range(l):
+            prob_list.append(1 / 2 ** i)
+        delay_list = []
+        avgMsg_list = []
+        avg_n_th_list = []
+        delay_theor_list = []
+        lambd_out_list = []
+
+        for lmbd in lambdas:
+            print("len = {} λ = {}".format(l, lmbd))
+            d, n, lambd_out = simulate_adaptive_aloha(lmbd, message_count, M, l)
+            matrix = get_transition_matrix(lmbd, M, l, pairs, prob_list)
+            dist = stationary_distribution(matrix)
+            print('dist len = {}, sum = {}'.format(len(dist), np.sum(dist)))
+            avg_n_th = get_avg_n_theor(M, l, pairs, dist)
+            lambd_out_theor = get_lambd_out_theor(M, l, pairs, prob_list, dist)
+            delay_theor = avg_n_th / lambd_out_theor
+            print('d = {}, d theor = {}, N = {}, N theor = {}'.format(d, delay_theor, n, avg_n_th))
+            avg_n_th_list.append(avg_n_th)
+            delay_theor_list.append(delay_theor)
+            delay_list.append(d)
+            avgMsg_list.append(n)
+            lambd_out_list.append(lambd_out)
+        
+        plt.plot(lambdas, delay_list, label=f'l = {l}')
+        plt.ylabel('d')
+        plt.xlabel('lambda')
+        plt.legend()
+    plt.savefig('one.png')
+
+message_count = 20000
+M = 30
+l = 7
+lambdas = np.arange(0.1, 2.1, 0.1)
+len_list = [4, 5, 6, 7]
+plot_system_params_different_len(message_count, M, len_list, lambdas)
+#plot_system_params(message_count, M, l, lambdas)
